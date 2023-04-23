@@ -1,7 +1,7 @@
 apiVersion: federation.maistra.io/v1
 kind: ExportedServiceSet
 metadata:
-  name: book-info-export
+  name: south-east-mesh
   namespace: us-east-mesh
 spec:
   exportRules:

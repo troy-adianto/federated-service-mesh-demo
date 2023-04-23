@@ -1,7 +1,7 @@
 apiVersion: federation.maistra.io/v1
 kind: ImportedServiceSet
 metadata:
-  name: book-info-import
+  name: us-east-mesh
   namespace: south-east-mesh
 spec:
   importRules:
