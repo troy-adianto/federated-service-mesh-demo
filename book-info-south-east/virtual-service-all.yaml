@@ -55,8 +55,12 @@ spec:
   hosts:
   - details
   http:
-  - route:
-    - destination:
-        host: details
-        subset: v1
+    - route:
+        - destination:
+            host: details.book-info.svc.us-east-mesh-imports.local
+          weight: 50
+        - destination:
+            host: details
+            subset: v1
+          weight: 50
 ---
