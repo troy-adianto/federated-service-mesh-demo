@@ -1,0 +1,25 @@
+apiVersion: federation.maistra.io/v1
+kind: ImportedServiceSet
+metadata:
+  name: book-info-import
+  namespace: south-east-mesh
+spec:
+  importRules:
+    - importAsLocal: true
+      nameSelector:
+        alias:
+          name: ratings
+          namespace: book-info
+        name: ratings
+        namespace: book-info
+      type: NameSelector
+    - importAsLocal: false
+      nameSelector:
+        alias:
+          name: details
+          namespace: book-info
+        name: details
+        namespace: book-info
+      type: NameSelector
+  locality:
+    region: us-east-2

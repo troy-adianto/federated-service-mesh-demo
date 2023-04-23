@@ -1,0 +1,128 @@
+apiVersion: maistra.io/v2
+kind: ServiceMeshControlPlane
+metadata:
+  name: us-east-mesh
+  namespace: us-east-mesh
+spec:
+  addons:
+    grafana:
+      enabled: true
+    jaeger:
+      install:
+        storage:
+          type: Memory
+    kiali:
+      enabled: true
+    prometheus:
+      enabled: true
+  gateways:
+    additionalEgress:
+      egress-south-east-mesh:
+        enabled: true
+        requestedNetworkView:
+          - south-east-network
+        routerMode: sni-dnat
+        service:
+          metadata:
+            labels:
+              federation.maistra.io/egress-for: egress-south-east-mesh
+          ports:
+            - name: tls
+              port: 15443
+            - name: http-discovery
+              port: 8188
+    additionalIngress:
+      ingress-south-east-mesh:
+        enabled: true
+        routerMode: sni-dnat
+        service:
+          metadata:
+            annotations:
+              service.beta.kubernetes.io/aws-load-balancer-type: nlb
+            labels:
+              federation.maistra.io/ingress-for: ingress-south-east-mesh
+          ports:
+            - name: tls
+              port: 15443
+            - name: https-discovery
+              port: 8188
+          type: LoadBalancer
+  policy:
+    type: Istiod
+  profiles:
+    - default
+  security:
+    trust:
+      domain: us-east-mesh.local
+  telemetry:
+    type: Istiod
+  tracing:
+    sampling: 10000
+    type: Jaeger
+  version: v2.3
+
+---
+
+apiVersion: maistra.io/v1
+kind: ServiceMeshMemberRoll
+metadata:
+  name: default
+  namespace: us-east-mesh
+spec:
+  members:
+    - book-info
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: south-east-mesh-ca-root-cert
+  namespace: us-east-mesh
+data:
+  root-cert.pem: |
+    -----BEGIN CERTIFICATE-----
+    MIIC/DCCAeSgAwIBAgIQXVXQXZQfisOpZBZco3XNuzANBgkqhkiG9w0BAQsFADAY
+    MRYwFAYDVQQKEw1jbHVzdGVyLmxvY2FsMB4XDTIzMDQyMjA1MjExMFoXDTMzMDQx
+    OTA1MjExMFowGDEWMBQGA1UEChMNY2x1c3Rlci5sb2NhbDCCASIwDQYJKoZIhvcN
+    AQEBBQADggEPADCCAQoCggEBANNBjzSjm2LmqVFhnhCj608Mb25Wsb69wQlfjKRo
+    ZFI3HuKzEZvlpYSg44NfHgvuUkLrj6DXogHv/Lcl2VBrqhMESAEqSKkkP6lswfCb
+    LuhbMnpReFRBvOnhlPR0SuHhgrYHXoI7RJt1FxQ3bFg2hDIH/+1CGaWlI64MDNP3
+    /DvADHYEMmBN4AtN28tVymROM3o0Ry2Jp/t4ZXPb/xaMZSsPbfo7pp4DyjfJ7PNd
+    asSuI6fUOeLTqQyMNgesOV5sAIm+HPxBWLs3bAGPOY51qzQCh/WetijZ8O0GMPT7
+    gxcZ0E1ae5JaRl1tfkYykentlx40XTv/DdGb7MX8obUmNuECAwEAAaNCMEAwDgYD
+    VR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFDtZh1PD5ebP
+    fHg8+1lYoqf5yhHqMA0GCSqGSIb3DQEBCwUAA4IBAQB0pq4JxlkNKSRix7ngOqs/
+    tI6sJLrpeAbD7iy1D1XUjAndGWW8/oQnOTacSLYMT4glgyx4M9VD3gGPcHECMo0N
+    vVoKxTYkmNLjfdupbkfKIzto6erjKpHVd1jKPlGhl+IQHShm06qWJNnwWTHWdHpD
+    VCdr4SKlvyibe5THLIhx7BAMXJ1N3sECemE8k7sBbsae13bIlzqGaFIhwH4SnpK2
+    IXF71bV3XD7F/uBucAkaFCjibft0tpM7NkeFMr0W3KdmkVrCejS9/TkLRjd0LiLG
+    64yMd8fWrR7Gt+WO/zk405pgK4MLbWym8+z2KdwFVYIT9mWQJb5X4IW3uPvtbisD
+    -----END CERTIFICATE-----
+
+---
+
+apiVersion: federation.maistra.io/v1
+kind: ServiceMeshPeer
+metadata:
+  name: south-east-mesh
+  namespace: us-east-mesh
+spec:
+  gateways:
+    egress:
+      name: egress-south-east-mesh
+    ingress:
+      name: ingress-south-east-mesh
+  remote:
+    addresses:
+      - >-
+        a277850ee5561437296fec1d9789da23-6a4c6eb33aa17f06.elb.ap-southeast-1.amazonaws.com
+  security:
+    certificateChain:
+      kind: ConfigMap
+      name: south-east-mesh-ca-root-cert
+    clientID: >-
+      south-east-mesh.local/ns/south-east-mesh/sa/egress-us-east-mesh-service-account
+    trustDomain: south-east-mesh.local
+
+---

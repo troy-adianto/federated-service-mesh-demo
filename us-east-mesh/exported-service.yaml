@@ -1,0 +1,15 @@
+apiVersion: federation.maistra.io/v1
+kind: ExportedServiceSet
+metadata:
+  name: book-info-export
+  namespace: us-east-mesh
+spec:
+  exportRules:
+    - nameSelector:
+        name: ratings
+        namespace: book-info
+      type: NameSelector
+    - nameSelector:
+        name: details
+        namespace: book-info
+      type: NameSelector
